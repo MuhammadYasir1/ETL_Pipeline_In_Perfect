@@ -42,6 +42,5 @@ def prefect_flow():
 
 
 if __name__ == '__main__':
-    users = extract(url='https://jsonplaceholder.typicode.com/users')
-    df_users = transform(users)
-    load(data=df_users, path=f'data/users_{int(datetime.now().timestamp())}.csv')
+    flow = prefect_flow()
+    flow.run()
