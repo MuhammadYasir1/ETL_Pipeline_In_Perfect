@@ -2,9 +2,10 @@
 import json
 import requests
 import pandas as pd
-from datetime import datetime
-import perfect
-from prefect import task, Flow,Parameter
+from datetime import datetime, timedelta
+from prefect import task, Flow, Parameter
+from prefect.schedules import IntervalSchedule
+
 
 @task
 def extract(url: str) -> dict:
@@ -12,6 +13,7 @@ def extract(url: str) -> dict:
     if not res:
         raise Exception('No data fetched!')
     return json.loads(res.content)
+
 
 @task
 def transform(data: dict) -> pd.DataFrame:
@@ -28,20 +30,26 @@ def transform(data: dict) -> pd.DataFrame:
         })
     return pd.DataFrame(transformed)
 
+
 @task
 def load(data: pd.DataFrame, path: str) -> None:
     data.to_csv(path_or_buf=path, index=False)
 
-# Prefect Flow Function
+
+scheduler = IntervalSchedule(
+    interval=timedelta(seconds=10)
+)
+
+
 def prefect_flow():
-    with Flow(name='simple_etl_pipeline') as flow:
+    with Flow(name='simple_etl_pipeline', schedule=scheduler) as flow:
         param_url = Parameter(name='p_url', required=True)
 
         users = extract(url=param_url)
         df_users = transform(users)
         load(data=df_users, path=f'data/users_{int(datetime.now().timestamp())}.csv')
-    return flow
 
+    return flow
 
 
 if __name__ == '__main__':
