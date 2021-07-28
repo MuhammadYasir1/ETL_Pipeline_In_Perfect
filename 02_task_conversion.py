@@ -2,16 +2,17 @@ import json
 import requests
 import pandas as pd
 from datetime import datetime
+import perfect
 from prefect import task
 
-
+@task
 def extract(url: str) -> dict:
     res = requests.get(url)
     if not res:
         raise Exception('No data fetched!')
     return json.loads(res.content)
 
-
+@task
 def transform(data: dict) -> pd.DataFrame:
     transformed = []
     for user in data:
@@ -26,7 +27,7 @@ def transform(data: dict) -> pd.DataFrame:
         })
     return pd.DataFrame(transformed)
 
-
+@task
 def load(data: pd.DataFrame, path: str) -> None:
     data.to_csv(path_or_buf=path, index=False)
 
