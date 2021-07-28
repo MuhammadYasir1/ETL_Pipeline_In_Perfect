@@ -3,7 +3,7 @@ import requests
 import pandas as pd
 from datetime import datetime
 import perfect
-from prefect import task
+from prefect import task, Flow
 
 @task
 def extract(url: str) -> dict:
@@ -30,6 +30,15 @@ def transform(data: dict) -> pd.DataFrame:
 @task
 def load(data: pd.DataFrame, path: str) -> None:
     data.to_csv(path_or_buf=path, index=False)
+
+# Prefect Flow Function
+def prefect_flow():
+    with Flow(name='simple_etl_pipeline') as flow:
+        users = extract(url='https://jsonplaceholder.typicode.com/users')
+        df_users = transform(users)
+        load(data=df_users, path=f'data/users_{int(datetime.now().timestamp())}.csv')
+    return flow
+
 
 
 if __name__ == '__main__':
